@@ -1,682 +1,156 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spoonacular Recipe Finder</title>
-    <!-- Tailwind CSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light grey background */
-            color: #334155; /* Darker slate for body text */
-        }
-        .container {
-            max-width: 960px;
-            margin: 2rem auto;
-            padding: 2rem; /* Increased padding */
-            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%); /* Subtle gradient */
-            border-radius: 1.5rem; /* More rounded corners */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
-        }
-        input[type="text"] {
-            padding: 1rem 1.25rem; /* Larger padding */
-            border: 1px solid #e2e8f0; /* Lighter border */
-            border-radius: 0.75rem; /* More rounded */
-            width: 100%;
-            font-size: 1.1rem; /* Slightly larger font */
-            transition: border-color 0.2s, box-shadow 0.2s;
-            background-color: #ffffff;
-            color: #334155;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inner shadow */
-        }
-        input[type="text"]:focus {
-            outline: none;
-            border-color: #6366f1; /* Indigo-500 */
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25); /* Stronger focus ring */
-        }
-        button {
-            padding: 1.1rem 2rem; /* Even larger padding for more prominence */
-            color: white; /* Changed to white */
-            border-radius: 0.75rem; /* More rounded */
-            font-weight: 700; /* Bolder font */
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s; /* Smoother transitions */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Stronger initial shadow */
-            letter-spacing: 0.025em; /* Slight letter spacing */
-            text-transform: uppercase; /* Uppercase text for impact */
-        }
-        button:hover {
-            transform: translateY(-3px); /* More pronounced lift */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25); /* Even stronger shadow on hover */
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        /* Specific button styling for nature-like colors */
-        #searchButton {
-            background-color: #16a34a; /* Green-600 */
-        }
-        #searchButton:hover {
-            background-color: #15803d; /* Green-700 */
-        }
-        #randomRecipeButton {
-            background-color: #0ea5e9; /* Sky-500 */
-        }
-        #randomRecipeButton:hover {
-            background-color: #0284c7; /* Sky-600 */
-        }
-        #clearSearchButton {
-            background-color: #78350f; /* Amber-900 */
-        }
-        #clearSearchButton:hover {
-            background-color: #92400e; /* Amber-800 */
-        }
-        #backToSearchButton {
-            background-color: #1d4ed8; /* Blue-700 */
-            padding: 0.9rem 1.5rem; /* Slightly smaller for back button */
-            font-size: 0.95rem;
-        }
-        #backToSearchButton:hover {
-            background-color: #1e40af; /* Blue-800 */
-        }
-        .ingredient-item button {
-            background-color: #22c55e; /* Green-500 */
-            padding: 0.6rem 0.9rem; /* Smaller padding for ingredient buttons */
-            font-size: 0.875rem; /* Smaller font size */
-            border-radius: 0.5rem;
-            box-shadow: none; /* No shadow for these buttons */
-            text-transform: none; /* No uppercase for these */
-            color: white; /* Ensure white text for these too */
-            font-weight: 700; /* Ensure bold for these too */
-        }
-        .ingredient-item button:hover {
-            background-color: #16a34a; /* Green-600 */
-            transform: none; /* No lift effect */
-            box-shadow: none;
+<script>
+    // Remove direct API keys from client-side
+    // const SPOONACULAR_API_KEY = "YOUR_SPOONACULAR_API_KEY";
+    // const PEXELS_API_KEY = "YOUR_PEXELS_API_KEY";
+
+    // ... (rest of your existing code)
+
+    /**
+     * Searches for recipes based on the user's input and displays a list of choices.
+     */
+    async function searchRecipes() {
+        const query = dishInput.value.trim();
+        if (!query) {
+            displayError('Please enter a dish name.');
+            return;
         }
 
-        .recipe-section {
-            margin-top: 2.5rem; /* Increased margin */
-            padding-top: 2.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #6366f1;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 1.5rem auto; /* Adjusted margin */
-            display: none; /* Hidden by default */
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .error-message {
-            color: #ef4444; /* Red-500 */
-            margin-top: 1.5rem; /* Adjusted margin */
-            font-weight: 600; /* Bolder font */
-            text-align: center;
-        }
-        .ingredient-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.75rem; /* More spacing */
-            background-color: #fefefe; /* Lighter background */
-            padding: 0.75rem; /* More padding */
-            border-radius: 0.75rem; /* More rounded */
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Subtle shadow */
-        }
-        .ingredient-image {
-            width: 60px; /* Slightly larger image */
-            height: 60px;
-            object-fit: contain;
-            margin-right: 1rem; /* More margin */
-            border-radius: 0.5rem; /* More rounded */
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-        .instruction-step {
-            margin-bottom: 1.25rem; /* More spacing */
-            padding: 1rem; /* More padding */
-            background-color: #f9fafb;
-            border-left: 5px solid #a78bfa; /* Thicker border */
-            border-radius: 0.75rem; /* More rounded */
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-        }
-        .instruction-step strong {
-            color: #4c1d95; /* Violet-800 */
-        }
-        .search-results-list {
-            margin-top: 2rem; /* Adjusted margin */
-            padding: 0;
-            list-style: none;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 1.5rem; /* Adjusted padding */
-        }
-        .search-results-item {
-            background-color: #fefefe; /* Lighter background */
-            padding: 1rem 1.25rem; /* More padding */
-            margin-bottom: 0.75rem; /* More spacing */
-            border-radius: 0.75rem; /* More rounded */
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
-            font-weight: 600; /* Bolder font */
-            color: #4338ca; /* Indigo-700 */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08); /* Subtle shadow */
-        }
-        .search-results-item:hover {
-            background-color: #eef2ff; /* Indigo-50 */
-            transform: translateY(-3px); /* More pronounced lift */
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.12);
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 25px; /* More padding */
-            border-radius: 1rem; /* More rounded */
-            box-shadow: 0 10px 20px rgba(0,0,0,0.25); /* Stronger shadow */
-            width: 90%; /* Responsive width */
-            max-width: 550px; /* Max width */
-            position: relative;
-        }
-        .close-button {
-            color: #aaa;
-            position: absolute;
-            top: 15px; /* Adjusted position */
-            right: 20px; /* Adjusted position */
-            font-size: 32px; /* Larger close button */
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .close-button:hover,
-        .close-button:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen flex items-start justify-center">
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-8">🍽️ Recipe Finder</h1>
-
-        <div class="flex flex-col sm:flex-row gap-4 mb-8">
-            <input type="text" id="dishInput" placeholder="Enter dish name (e.g., Pasta Carbonara)" class="flex-grow">
-            <button id="searchButton">Search Recipe</button>
-            <button id="randomRecipeButton">Surprise Me!</button>
-            <button id="clearSearchButton">Clear Search</button>
-        </div>
-
-        <div id="loadingSpinner" class="loading-spinner"></div>
-        <div id="errorMessage" class="error-message hidden"></div>
-
-        <ul id="searchResultsList" class="search-results-list hidden">
-            <h3 class="text-xl font-semibold text-indigo-600 mb-4">Select a Recipe:</h3>
-            <!-- Search results will be loaded here -->
-        </ul>
-
-        <div id="recipeResults" class="recipe-section hidden">
-            <button id="backToSearchButton" class="mb-6 px-5 py-2 hidden">
-                ← Back to Search Results
-            </button>
-            <h2 class="text-2xl font-semibold text-indigo-600 mb-5 text-center" id="dishTitle"></h2>
-            <div class="flex justify-center mb-8">
-                <img id="dishImage" src="" alt="Dish Image" class="rounded-lg shadow-lg max-w-full h-auto" style="max-height: 450px;">
-            </div>
-
-            <h3 class="text-xl font-semibold text-indigo-600 mb-4">Nutritional Information:</h3>
-            <div id="nutritionInfo" class="grid grid-cols-2 gap-3 text-gray-700 mb-8 p-4 bg-blue-50 rounded-lg shadow-sm">
-                <!-- Nutrition info will be loaded here -->
-            </div>
-
-            <h3 class="text-xl font-semibold text-indigo-600 mb-4">Ingredients:</h3>
-            <ul id="ingredientsList" class="list-none p-0 space-y-3">
-                <!-- Ingredients will be loaded here -->
-            </ul>
-
-            <h3 class="text-xl font-semibold text-indigo-600 mt-8 mb-4">Instructions:</h3>
-            <div id="instructions" class="space-y-4 text-gray-700 leading-relaxed">
-                <!-- Instructions will be loaded here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Ingredient Substitutes Modal -->
-    <div id="substituteModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" id="closeModalButton">&times;</span>
-            <h3 class="text-xl font-bold text-indigo-700 mb-4" id="modalTitle">Substitutes for [Ingredient]</h3>
-            <div id="substituteContent" class="text-gray-700">
-                <!-- Substitutes will be loaded here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // API Keys
-        const SPOONACULAR_API_KEY = "4d6028bb7d744b3fb969b2f14d0782e8";
-        const PEXELS_API_KEY = "ehBalsbQdwR4dbTs9gdJgmdqgcIeVgJxcXPjhuIMQrfiRXw3RThq0boQ"; // User provided Pexels API Key
-
-        // Get references to HTML elements
-        const dishInput = document.getElementById('dishInput');
-        const searchButton = document.getElementById('searchButton');
-        const randomRecipeButton = document.getElementById('randomRecipeButton');
-        const clearSearchButton = document.getElementById('clearSearchButton');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const errorMessage = document.getElementById('errorMessage');
-        const searchResultsList = document.getElementById('searchResultsList');
-        const recipeResults = document.getElementById('recipeResults');
-        const backToSearchButton = document.getElementById('backToSearchButton');
-        const dishTitle = document.getElementById('dishTitle');
-        const dishImage = document.getElementById('dishImage');
-        const nutritionInfoDiv = document.getElementById('nutritionInfo');
-        const ingredientsList = document.getElementById('ingredientsList');
-        const instructionsDiv = document.getElementById('instructions');
-
-        // Modal elements
-        const substituteModal = document.getElementById('substituteModal');
-        const closeModalButton = document.getElementById('closeModalButton');
-        const modalTitle = document.getElementById('modalTitle');
-        const substituteContent = document.getElementById('substituteContent');
-
-        // Base URL for Spoonacular ingredient images
-        const INGREDIENT_IMAGE_BASE_URL = 'https://spoonacular.com/cdn/ingredients_100x100/';
-
-        let currentSearchResults = []; // To store results for "Back to Search Results"
-
-        /**
-         * Fetches data from a given URL with exponential backoff for retries.
-         * @param {string} url - The URL to fetch.
-         * @param {number} retries - The number of retries left.
-         * @param {number} delay - The current delay before retrying (in ms).
-         * @param {object} headers - Optional headers for the fetch request.
-         * @returns {Promise<Response>} - The fetch response.
-         */
-        async function fetchWithRetry(url, retries = 3, delay = 1000, headers = {}) {
-            try {
-                const response = await fetch(url, { headers });
-                if (!response.ok) {
-                    if (response.status === 429 && retries > 0) {
-                        console.warn(`Rate limit hit. Retrying in ${delay / 1000}s...`);
-                        await new Promise(res => setTimeout(res, delay));
-                        return fetchWithRetry(url, retries - 1, delay * 2, headers);
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response;
-            } catch (error) {
-                if (retries > 0) {
-                    console.warn(`Fetch failed. Retrying in ${delay / 1000}s...`, error);
-                    await new Promise(res => setTimeout(res, delay));
-                    return fetchWithRetry(url, retries - 1, delay * 2, headers);
-                }
-                throw error;
-            }
-        }
-
-        /**
-         * Searches for recipes based on the user's input and displays a list of choices.
-         */
-        async function searchRecipes() {
-            const query = dishInput.value.trim();
-            if (!query) {
-                displayError('Please enter a dish name.');
-                return;
-            }
-
-            // Clear previous results and errors
-            hideRecipeResults();
-            hideSearchResults();
-            hideError();
-            showLoadingSpinner();
-
-            try {
-                const searchUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${encodeURIComponent(query)}&number=5&apiKey=${SPOONACULAR_API_KEY}`;
-                const searchResponse = await fetchWithRetry(searchUrl);
-                const searchData = await searchResponse.json();
-
-                if (searchData.results && searchData.results.length > 0) {
-                    currentSearchResults = searchData.results; // Store results for back button
-                    displaySearchResults(searchData.results);
-                } else {
-                    displayError(`No recipes found for "${query}". Please try a different dish name.`);
-                }
-            } catch (error) {
-                console.error('Error searching for recipes:', error);
-                displayError('Failed to search for recipes. Please try again later.');
-            } finally {
-                hideLoadingSpinner();
-            }
-        }
-
-        /**
-         * Fetches and displays a random recipe.
-         */
-        async function getRandomRecipe() {
-            // Clear previous results and errors
-            hideRecipeResults();
-            hideSearchResults();
-            hideError();
-            showLoadingSpinner();
-
-            try {
-                const randomUrl = `https://api.spoonacular.com/recipes/random?number=1&apiKey=${SPOONACULAR_API_KEY}`;
-                const randomResponse = await fetchWithRetry(randomUrl);
-                const randomData = await randomResponse.json();
-
-                if (randomData.recipes && randomData.recipes.length > 0) {
-                    await getRecipeDetails(randomData.recipes[0].id);
-                } else {
-                    displayError('Could not fetch a random recipe. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error fetching random recipe:', error);
-                displayError('Failed to fetch a random recipe. Please try again later.');
-            } finally {
-                hideLoadingSpinner();
-            }
-        }
-
-        /**
-         * Displays a list of search results for the user to choose from.
-         * @param {Array} results - An array of recipe search results.
-         */
-        function displaySearchResults(results) {
-            searchResultsList.innerHTML = '<h3 class="text-xl font-semibold text-indigo-600 mb-4">Select a Recipe:</h3>';
-            results.forEach(result => {
-                const listItem = document.createElement('li');
-                listItem.className = 'search-results-item';
-                listItem.textContent = result.title;
-                listItem.dataset.recipeId = result.id;
-                listItem.addEventListener('click', () => {
-                    hideSearchResults();
-                    getRecipeDetails(result.id);
-                });
-                searchResultsList.appendChild(listItem);
-            });
-            showSearchResults();
-            backToSearchButton.classList.add('hidden'); // Hide back button when showing search results
-        }
-
-        /**
-         * Fetches and displays detailed information for a given recipe ID.
-         * Includes nutritional information.
-         * @param {number} recipeId - The ID of the recipe to fetch.
-         */
-        async function getRecipeDetails(recipeId) {
-            showLoadingSpinner();
-            hideError();
-            hideRecipeResults();
-
-            try {
-                const detailsUrl = `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`;
-                const detailsResponse = await fetchWithRetry(detailsUrl);
-                const recipe = await detailsResponse.json();
-
-                await displayRecipe(recipe); // Await displayRecipe to ensure Pexels image is fetched
-            } catch (error) {
-                console.error('Error fetching recipe details:', error);
-                displayError('Failed to retrieve recipe details. Please try again later.');
-            } finally {
-                hideLoadingSpinner();
-            }
-        }
-
-        /**
-         * Displays the recipe information on the page, including Pexels fallback for image.
-         * @param {object} recipe - The recipe object from Spoonacular API.
-         */
-        async function displayRecipe(recipe) {
-            dishTitle.textContent = recipe.title;
-
-            // Pexels Image Fallback Logic
-            let finalDishImageUrl = recipe.image;
-            if (!finalDishImageUrl || !isValidImageUrl(finalDishImageUrl)) {
-                console.log('Spoonacular image missing or invalid, trying Pexels...');
-                try {
-                    const pexelsSearchUrl = `https://api.pexels.com/v1/search?query=${encodeURIComponent(recipe.title)}&per_page=1`;
-                    const pexelsHeaders = { 'Authorization': PEXELS_API_KEY };
-                    const pexelsResponse = await fetchWithRetry(pexelsSearchUrl, 3, 1000, pexelsHeaders);
-                    const pexelsData = await pexelsResponse.json();
-
-                    if (pexelsData.photos && pexelsData.photos.length > 0) {
-                        finalDishImageUrl = pexelsData.photos[0].src.medium; // Use medium size for display
-                        console.log('Found image from Pexels:', finalDishImageUrl);
-                    } else {
-                        console.log('No relevant image found on Pexels.');
-                        finalDishImageUrl = 'https://placehold.co/400x300/e0e0e0/555555?text=No+Image+Available';
-                    }
-                } catch (pexelsError) {
-                    console.error('Error fetching image from Pexels:', pexelsError);
-                    finalDishImageUrl = 'https://placehold.co/400x300/e0e0e0/555555?text=Image+Load+Error';
-                }
-            }
-            dishImage.src = finalDishImageUrl;
-            dishImage.alt = recipe.title;
-            dishImage.onerror = () => { dishImage.src = 'https://placehold.co/400x300/e0e0e0/555555?text=Image+Load+Failed'; };
-
-
-            // Display Nutrition Information
-            nutritionInfoDiv.innerHTML = '';
-            if (recipe.nutrition && recipe.nutrition.nutrients && recipe.nutrition.nutrients.length > 0) {
-                const nutrientsToShow = ['Calories', 'Protein', 'Carbohydrates', 'Fat'];
-                nutrientsToShow.forEach(nutrientName => {
-                    const nutrient = recipe.nutrition.nutrients.find(n => n.name === nutrientName);
-                    if (nutrient) {
-                        const nutrientItem = document.createElement('div');
-                        nutrientItem.className = 'flex justify-between items-center';
-                        nutrientItem.innerHTML = `<span class="font-medium">${nutrient.name}:</span> <span>${nutrient.amount}${nutrient.unit}</span>`;
-                        nutritionInfoDiv.appendChild(nutrientItem);
-                    }
-                });
-            } else {
-                nutritionInfoDiv.innerHTML = '<p class="text-gray-500 col-span-2">No detailed nutrition information available.</p>';
-            }
-
-
-            // Display ingredients with substitution buttons
-            ingredientsList.innerHTML = '';
-            if (recipe.extendedIngredients && recipe.extendedIngredients.length > 0) {
-                recipe.extendedIngredients.forEach(ingredient => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'ingredient-item justify-between'; // Added justify-between for spacing
-
-                    const leftContent = document.createElement('div');
-                    leftContent.className = 'flex items-center';
-
-                    const img = document.createElement('img');
-                    img.src = `${INGREDIENT_IMAGE_BASE_URL}${ingredient.image || 'no-image.jpg'}`;
-                    img.alt = ingredient.name;
-                    img.className = 'ingredient-image';
-                    img.onerror = () => { img.src = 'https://placehold.co/50x50/e0e0e0/555555?text=N/A'; };
-
-                    const textSpan = document.createElement('span');
-                    textSpan.textContent = ingredient.original;
-
-                    leftContent.appendChild(img);
-                    leftContent.appendChild(textSpan);
-                    listItem.appendChild(leftContent);
-
-                    // Add substitution button
-                    const substituteBtn = document.createElement('button');
-                    substituteBtn.textContent = 'Get Substitutes';
-                    substituteBtn.className = 'ml-4 px-3 py-1 bg-green-500 text-white text-sm rounded-md hover:bg-green-600 transition-colors';
-                    substituteBtn.onclick = () => getIngredientSubstitutes(ingredient.id, ingredient.name);
-                    listItem.appendChild(substituteBtn);
-
-                    ingredientsList.appendChild(listItem);
-                });
-            } else {
-                ingredientsList.innerHTML = '<li class="text-gray-500">No ingredients found.</li>';
-            }
-
-            // Display instructions
-            instructionsDiv.innerHTML = '';
-            if (recipe.analyzedInstructions && recipe.analyzedInstructions.length > 0 && recipe.analyzedInstructions[0].steps) {
-                recipe.analyzedInstructions[0].steps.forEach((step, index) => {
-                    const stepDiv = document.createElement('div');
-                    stepDiv.className = 'instruction-step';
-                    stepDiv.innerHTML = `<strong>Step ${index + 1}:</strong> ${step.step.trim()}`;
-                    instructionsDiv.appendChild(stepDiv);
-                });
-            } else if (recipe.instructions) {
-                // Fallback to simpler parsing if analyzedInstructions is not available
-                let parsedInstructions = recipe.instructions.split(/\.\s*(?=[A-Z])/).filter(step => step.trim() !== '');
-                if (parsedInstructions.length > 0) {
-                    parsedInstructions.forEach((stepText, index) => {
-                        const stepDiv = document.createElement('div');
-                        stepDiv.className = 'instruction-step';
-                        stepDiv.innerHTML = `<strong>Step ${index + 1}:</strong> ${stepText.trim()}`;
-                        instructionsDiv.appendChild(stepDiv);
-                    });
-                } else {
-                    instructionsDiv.innerHTML = '<p class="text-gray-500">No detailed instructions available.</p>';
-                }
-            } else {
-                instructionsDiv.innerHTML = '<p class="text-gray-500">No detailed instructions available.</p>';
-            }
-
-            showRecipeResults();
-            backToSearchButton.classList.remove('hidden'); // Show back button
-        }
-
-        /**
-         * Checks if a URL is likely a valid image URL.
-         * @param {string} url - The URL to check.
-         * @returns {boolean} - True if valid, false otherwise.
-         */
-        function isValidImageUrl(url) {
-            return url && (url.startsWith('http://') || url.startsWith('https://')) && /\.(jpeg|jpg|gif|png|webp)$/i.test(url);
-        }
-
-        /**
-         * Fetches and displays ingredient substitutes in a modal.
-         * @param {number} ingredientId - The ID of the ingredient.
-         * @param {string} ingredientName - The name of the ingredient.
-         */
-        async function getIngredientSubstitutes(ingredientId, ingredientName) {
-            modalTitle.textContent = `Substitutes for ${ingredientName}`;
-            substituteContent.innerHTML = '<p class="text-center text-gray-500">Loading substitutes...</p>';
-            substituteModal.style.display = 'flex'; // Show modal
-
-            try {
-                const substitutesUrl = `https://api.spoonacular.com/food/ingredients/${ingredientId}/substitutes?apiKey=${SPOONACULAR_API_KEY}`;
-                const substitutesResponse = await fetchWithRetry(substitutesUrl);
-                const substitutesData = await substitutesResponse.json();
-
-                if (substitutesData.substitutes && substitutesData.substitutes.length > 0) {
-                    substituteContent.innerHTML = `<ul class="list-disc pl-5 space-y-1">
-                        ${substitutesData.substitutes.map(sub => `<li>${sub}</li>`).join('')}
-                    </ul>`;
-                } else {
-                    substituteContent.innerHTML = `<p class="text-center text-gray-500">No common substitutes found for ${ingredientName}.</p>`;
-                }
-            } catch (error) {
-                console.error('Error fetching substitutes:', error);
-                substituteContent.innerHTML = '<p class="text-center text-red-500">Failed to load substitutes. Please try again.</p>';
-            }
-        }
-
-        // Helper functions for UI state
-        function showLoadingSpinner() {
-            loadingSpinner.style.display = 'block';
-        }
-
-        function hideLoadingSpinner() {
-            loadingSpinner.style.display = 'none';
-        }
-
-        function displayError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.remove('hidden');
-        }
-
-        function hideError() {
-            errorMessage.classList.add('hidden');
-            errorMessage.textContent = '';
-        }
-
-        function showRecipeResults() {
-            recipeResults.classList.remove('hidden');
-        }
-
-        function hideRecipeResults() {
-            recipeResults.classList.add('hidden');
-        }
-
-        function showSearchResults() {
-            searchResultsList.classList.remove('hidden');
-        }
-
-        function hideSearchResults() {
-            searchResultsList.classList.add('hidden');
-        }
-
-        function clearAll() {
-            dishInput.value = '';
-            hideRecipeResults();
-            hideSearchResults();
-            hideError();
-            backToSearchButton.classList.add('hidden');
-            // Close modal if open
-            substituteModal.style.display = 'none';
-        }
-
-        // Event Listeners
-        searchButton.addEventListener('click', searchRecipes);
-        randomRecipeButton.addEventListener('click', getRandomRecipe);
-        clearSearchButton.addEventListener('click', clearAll);
-        dishInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                searchRecipes();
-            }
-        });
-        backToSearchButton.addEventListener('click', () => {
-            hideRecipeResults();
-            if (currentSearchResults.length > 0) {
-                displaySearchResults(currentSearchResults);
-            } else {
-                // If no previous search results, just clear the UI
-                clearAll();
-            }
-        });
-        closeModalButton.addEventListener('click', () => {
-            substituteModal.style.display = 'none';
-        });
-        // Close modal if clicked outside content
-        window.addEventListener('click', (event) => {
-            if (event.target === substituteModal) {
-                substituteModal.style.display = 'none';
-            }
-        });
-
-
-        // Initial state: hide results and error
         hideRecipeResults();
-        hideError();
         hideSearchResults();
-    </script>
-</body>
-</html>
+        hideError();
+        showLoadingSpinner();
+
+        try {
+            // Call Netlify Function for Spoonacular search
+            const searchUrl = `/.netlify/functions/spoonacular-proxy?search-recipes=true&query=${encodeURIComponent(query)}&number=5`;
+            const searchResponse = await fetchWithRetry(searchUrl);
+            const searchData = await searchResponse.json();
+
+            if (searchData.results && searchData.results.length > 0) {
+                currentSearchResults = searchData.results;
+                displaySearchResults(searchData.results);
+            } else {
+                displayError(`No recipes found for "${query}". Please try a different dish name.`);
+            }
+        } catch (error) {
+            console.error('Error searching for recipes:', error);
+            displayError('Failed to search for recipes. Please try again later.');
+        } finally {
+            hideLoadingSpinner();
+        }
+    }
+
+    /**
+     * Fetches and displays a random recipe.
+     */
+    async function getRandomRecipe() {
+        hideRecipeResults();
+        hideSearchResults();
+        hideError();
+        showLoadingSpinner();
+
+        try {
+            // Call Netlify Function for random recipe
+            const randomUrl = `/.netlify/functions/spoonacular-proxy?random-recipe=true`;
+            const randomResponse = await fetchWithRetry(randomUrl);
+            const randomData = await randomResponse.json();
+
+            if (randomData.recipes && randomData.recipes.length > 0) {
+                await getRecipeDetails(randomData.recipes[0].id);
+            } else {
+                displayError('Could not fetch a random recipe. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error fetching random recipe:', error);
+            displayError('Failed to fetch a random recipe. Please try again later.');
+        } finally {
+            hideLoadingSpinner();
+        }
+    }
+
+    /**
+     * Fetches and displays detailed information for a given recipe ID.
+     */
+    async function getRecipeDetails(recipeId) {
+        showLoadingSpinner();
+        hideError();
+        hideRecipeResults();
+
+        try {
+            // Call Netlify Function for recipe details
+            const detailsUrl = `/.netlify/functions/spoonacular-proxy?get-recipe-details=true&recipeId=${recipeId}&includeNutrition=true`;
+            const detailsResponse = await fetchWithRetry(detailsUrl);
+            const recipe = await detailsResponse.json();
+
+            await displayRecipe(recipe);
+        } catch (error) {
+            console.error('Error fetching recipe details:', error);
+            displayError('Failed to retrieve recipe details. Please try again later.');
+        } finally {
+            hideLoadingSpinner();
+        }
+    }
+
+    /**
+     * Displays the recipe information on the page, including Pexels fallback for image.
+     */
+    async function displayRecipe(recipe) {
+        dishTitle.textContent = recipe.title;
+
+        let finalDishImageUrl = recipe.image;
+        if (!finalDishImageUrl || !isValidImageUrl(finalDishImageUrl)) {
+            console.log('Spoonacular image missing or invalid, trying Pexels...');
+            try {
+                // Call Netlify Function for Pexels search
+                const pexelsSearchUrl = `/.netlify/functions/pexels-proxy?query=${encodeURIComponent(recipe.title)}`;
+                const pexelsResponse = await fetchWithRetry(pexelsSearchUrl);
+                const pexelsData = await pexelsResponse.json();
+
+                if (pexelsData.photos && pexelsData.photos.length > 0) {
+                    finalDishImageUrl = pexelsData.photos[0].src.medium;
+                    console.log('Found image from Pexels:', finalDishImageUrl);
+                } else {
+                    console.log('No relevant image found on Pexels.');
+                    finalDishImageUrl = 'https://placehold.co/400x300/e0e0e0/555555?text=No+Image+Available';
+                }
+            } catch (pexelsError) {
+                console.error('Error fetching image from Pexels:', pexelsError);
+                finalDishImageUrl = 'https://placehold.co/400x300/e0e0e0/555555?text=Image+Load+Error';
+            }
+        }
+        dishImage.src = finalDishImageUrl;
+        dishImage.alt = recipe.title;
+        dishImage.onerror = () => { dishImage.src = 'https://placehold.co/400x300/e0e0e0/555555?text=Image+Load+Failed'; };
+
+        // ... (rest of displayRecipe function remains the same)
+    }
+
+    /**
+     * Fetches and displays ingredient substitutes in a modal.
+     */
+    async function getIngredientSubstitutes(ingredientId, ingredientName) {
+        modalTitle.textContent = `Substitutes for ${ingredientName}`;
+        substituteContent.innerHTML = '<p class="text-center text-gray-500">Loading substitutes...</p>';
+        substituteModal.style.display = 'flex';
+
+        try {
+            // Call Netlify Function for ingredient substitutes
+            const substitutesUrl = `/.netlify/functions/spoonacular-proxy?ingredient-substitutes=true&ingredientId=${ingredientId}`;
+            const substitutesResponse = await fetchWithRetry(substitutesUrl);
+            const substitutesData = await substitutesResponse.json();
+
+            if (substitutesData.substitutes && substitutesData.substitutes.length > 0) {
+                substituteContent.innerHTML = `<ul class="list-disc pl-5 space-y-1">
+                    ${substitutesData.substitutes.map(sub => `<li>${sub}</li>`).join('')}
+                </ul>`;
+            } else {
+                substituteContent.innerHTML = `<p class="text-center text-gray-500">No common substitutes found for ${ingredientName}.</p>`;
+            }
+        } catch (error) {
+            console.error('Error fetching substitutes:', error);
+            substituteContent.innerHTML = '<p class="text-center text-red-500">Failed to load substitutes. Please try again.</p>';
+        }
+    }
+
+    // ... (rest of helper functions and event listeners remain the same)
+</script>
