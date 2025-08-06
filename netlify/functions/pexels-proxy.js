@@ -1,12 +1,9 @@
 // netlify/functions/pexels-proxy.js
-const fetch = require('node-fetch'); // You might need to install 'node-fetch'
+const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
-    // Access the API key from Netlify Environment Variables
     const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
-
-    // Get query parameters from the client-side request
-    const { query } = event.queryStringParameters;
+    const { query } = event.queryStringParameters; // Still just 'query' for Pexels
 
     if (!query) {
         return {
@@ -30,7 +27,7 @@ exports.handler = async function(event, context) {
             statusCode: response.status,
             headers: {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*", // Allow CORS from your frontend
+                "Access-Control-Allow-Origin": "*",
             },
             body: JSON.stringify(data)
         };
