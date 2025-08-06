@@ -275,9 +275,9 @@
     </div>
 
     <script>
-        // API Keys
-        const SPOONACULAR_API_KEY = "4d6028bb7d744b3fb969b2f14d0782e8";
-        const PEXELS_API_KEY = "ehBalsbQdwR4dbTs9gdJgmdqgcIeVgJxcXPjhuIMQrfiRXw3RThq0boQ"; // User provided Pexels API Key
+        // REMOVE THESE HARDCODED KEYS - THEY ARE NOW IN NETLIFY ENVIRONMENT VARIABLES
+        // const SPOONACULAR_API_KEY = "4d6028bb7d744b3fb969b2f14d0782e8";
+        // const PEXELS_API_KEY = "ehBalsbQdwR4dbTs9gdJgmdqgcIeVgJxcXPjhuIMQrfiRXw3RThq0boQ";
 
         // Get references to HTML elements
         const dishInput = document.getElementById('dishInput');
@@ -301,14 +301,15 @@
         const modalTitle = document.getElementById('modalTitle');
         const substituteContent = document.getElementById('substituteContent');
 
-        // Base URL for Spoonacular ingredient images
+        // Base URL for Spoonacular ingredient images (this is a public CDN, no key needed)
         const INGREDIENT_IMAGE_BASE_URL = 'https://spoonacular.com/cdn/ingredients_100x100/';
 
         let currentSearchResults = []; // To store results for "Back to Search Results"
 
         /**
          * Fetches data from a given URL with exponential backoff for retries.
-         * @param {string} url - The URL to fetch.
+         * This function now calls your Netlify Functions.
+         * @param {string} url - The URL of the Netlify Function to call.
          * @param {number} retries - The number of retries left.
          * @param {number} delay - The current delay before retrying (in ms).
          * @param {object} headers - Optional headers for the fetch request.
@@ -323,7 +324,10 @@
                         await new Promise(res => setTimeout(res, delay));
                         return fetchWithRetry(url, retries - 1, delay * 2, headers);
                     }
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    // Log the full response for debugging
+                    const errorText = await response.text();
+                    console.error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
                 }
                 return response;
             } catch (error) {
@@ -353,7 +357,9 @@
             showLoadingSpinner();
 
             try {
-                const searchUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${encodeURIComponent(query)}&number=5&apiKey=${SPOONACULAR_API_KEY}`;
+                // Call Netlify Function for Spoonacular search
+                // Note: The `search-recipes=true` is a custom parameter for your Netlify Function to know which API call to make
+                const searchUrl = `/.netlify/functions/spoonacular-proxy?action=search-recipes&query=${encodeURIComponent(query)}&number=5`;
                 const searchResponse = await fetchWithRetry(searchUrl);
                 const searchData = await searchResponse.json();
 
@@ -365,7 +371,7 @@
                 }
             } catch (error) {
                 console.error('Error searching for recipes:', error);
-                displayError('Failed to search for recipes. Please try again later.');
+                displayError('Failed to search for recipes. Please try again later. Check browser console for details.');
             } finally {
                 hideLoadingSpinner();
             }
@@ -382,7 +388,8 @@
             showLoadingSpinner();
 
             try {
-                const randomUrl = `https://api.spoonacular.com/recipes/random?number=1&apiKey=${SPOONACULAR_API_KEY}`;
+                // Call Netlify Function for random recipe
+                const randomUrl = `/.netlify/functions/spoonacular-proxy?action=random-recipe`;
                 const randomResponse = await fetchWithRetry(randomUrl);
                 const randomData = await randomResponse.json();
 
@@ -393,7 +400,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching random recipe:', error);
-                displayError('Failed to fetch a random recipe. Please try again later.');
+                displayError('Failed to fetch a random recipe. Please try again later. Check browser console for details.');
             } finally {
                 hideLoadingSpinner();
             }
@@ -431,14 +438,15 @@
             hideRecipeResults();
 
             try {
-                const detailsUrl = `https://api.spoonacular.com/recipes/${recipeId}/information?includeNutrition=true&apiKey=${SPOONACULAR_API_KEY}`;
+                // Call Netlify Function for recipe details
+                const detailsUrl = `/.netlify/functions/spoonacular-proxy?action=get-recipe-details&recipeId=${recipeId}&includeNutrition=true`;
                 const detailsResponse = await fetchWithRetry(detailsUrl);
                 const recipe = await detailsResponse.json();
 
                 await displayRecipe(recipe); // Await displayRecipe to ensure Pexels image is fetched
             } catch (error) {
                 console.error('Error fetching recipe details:', error);
-                displayError('Failed to retrieve recipe details. Please try again later.');
+                displayError('Failed to retrieve recipe details. Please try again later. Check browser console for details.');
             } finally {
                 hideLoadingSpinner();
             }
@@ -456,9 +464,9 @@
             if (!finalDishImageUrl || !isValidImageUrl(finalDishImageUrl)) {
                 console.log('Spoonacular image missing or invalid, trying Pexels...');
                 try {
-                    const pexelsSearchUrl = `https://api.pexels.com/v1/search?query=${encodeURIComponent(recipe.title)}&per_page=1`;
-                    const pexelsHeaders = { 'Authorization': PEXELS_API_KEY };
-                    const pexelsResponse = await fetchWithRetry(pexelsSearchUrl, 3, 1000, pexelsHeaders);
+                    // Call Netlify Function for Pexels search
+                    const pexelsSearchUrl = `/.netlify/functions/pexels-proxy?query=${encodeURIComponent(recipe.title)}`;
+                    const pexelsResponse = await fetchWithRetry(pexelsSearchUrl);
                     const pexelsData = await pexelsResponse.json();
 
                     if (pexelsData.photos && pexelsData.photos.length > 0) {
@@ -582,7 +590,8 @@
             substituteModal.style.display = 'flex'; // Show modal
 
             try {
-                const substitutesUrl = `https://api.spoonacular.com/food/ingredients/${ingredientId}/substitutes?apiKey=${SPOONACULAR_API_KEY}`;
+                // Call Netlify Function for ingredient substitutes
+                const substitutesUrl = `/.netlify/functions/spoonacular-proxy?action=ingredient-substitutes&ingredientId=${ingredientId}`;
                 const substitutesResponse = await fetchWithRetry(substitutesUrl);
                 const substitutesData = await substitutesResponse.json();
 
